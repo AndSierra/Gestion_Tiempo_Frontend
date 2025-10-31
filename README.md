@@ -2,7 +2,7 @@
 
 Sistema completo de seguimiento de horas con paneles basados en roles (Admin, Líder, Desarrollador).
 
-**Estado**: ✅ Sistema 100% API Backend con SQLite (mockData e IndexedDB eliminados)
+**Estado**: ✅ Sistema 100% API Backend con SQLite
 
 ---
 
