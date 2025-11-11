@@ -15,7 +15,7 @@ import type { Template } from '../lib/api';
 
 export default function TemplateManagement() {
   const { templates, reload: reloadTemplates } = useTemplates();
-  
+
   const [newTemplate, setNewTemplate] = useState({
     name: '',
     description: '',
@@ -76,7 +76,7 @@ export default function TemplateManagement() {
   };
 
   const openEditDialog = (template: Template) => {
-    setEditingTemplate({...template});
+    setEditingTemplate({ ...template });
     setIsDialogOpen(true);
   };
 
@@ -87,9 +87,9 @@ export default function TemplateManagement() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50">
       <Navigation />
-      
+
       <div className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="mb-8">
@@ -131,8 +131,8 @@ export default function TemplateManagement() {
                         {editingTemplate ? 'Editar Plantilla' : 'Crear Nueva Plantilla'}
                       </DialogTitle>
                       <DialogDescription>
-                        {editingTemplate 
-                          ? 'Modifique los datos de la plantilla' 
+                        {editingTemplate
+                          ? 'Modifique los datos de la plantilla'
                           : 'Complete los datos de la nueva plantilla'}
                       </DialogDescription>
                     </DialogHeader>
@@ -143,8 +143,8 @@ export default function TemplateManagement() {
                           id="templateName"
                           value={editingTemplate ? editingTemplate.name : newTemplate.name}
                           onChange={(e) => editingTemplate
-                            ? setEditingTemplate({...editingTemplate, name: e.target.value})
-                            : setNewTemplate({...newTemplate, name: e.target.value})
+                            ? setEditingTemplate({ ...editingTemplate, name: e.target.value })
+                            : setNewTemplate({ ...newTemplate, name: e.target.value })
                           }
                           placeholder="Ej: Proyecto Web Standard"
                         />
@@ -156,8 +156,8 @@ export default function TemplateManagement() {
                           id="templateDescription"
                           value={editingTemplate ? editingTemplate.description || '' : newTemplate.description}
                           onChange={(e) => editingTemplate
-                            ? setEditingTemplate({...editingTemplate, description: e.target.value})
-                            : setNewTemplate({...newTemplate, description: e.target.value})
+                            ? setEditingTemplate({ ...editingTemplate, description: e.target.value })
+                            : setNewTemplate({ ...newTemplate, description: e.target.value })
                           }
                           placeholder="Describe para qué tipo de proyectos es esta plantilla"
                           rows={2}
@@ -170,8 +170,8 @@ export default function TemplateManagement() {
                           id="templateTasks"
                           value={editingTemplate ? editingTemplate.tasks : newTemplate.tasks}
                           onChange={(e) => editingTemplate
-                            ? setEditingTemplate({...editingTemplate, tasks: e.target.value})
-                            : setNewTemplate({...newTemplate, tasks: e.target.value})
+                            ? setEditingTemplate({ ...editingTemplate, tasks: e.target.value })
+                            : setNewTemplate({ ...newTemplate, tasks: e.target.value })
                           }
                           placeholder="Frontend, Backend, Testing, Deployment"
                           rows={4}
@@ -182,7 +182,7 @@ export default function TemplateManagement() {
                       </div>
 
                       <div className="flex space-x-2">
-                        <Button 
+                        <Button
                           onClick={editingTemplate ? handleUpdateTemplate : handleCreateTemplate}
                           className="flex-1"
                         >

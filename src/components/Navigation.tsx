@@ -1,22 +1,22 @@
 import React from 'react';
 import { useAuth } from './AuthProvider';
 import { Button } from './ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from './ui/dropdown-menu';
 import { Avatar, AvatarFallback } from './ui/avatar';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Clock, 
-  Users, 
-  Settings, 
-  LogOut, 
-  BarChart3, 
-  FolderOpen, 
+import {
+  Clock,
+  Users,
+  Settings,
+  LogOut,
+  BarChart3,
+  FolderOpen,
   FileText,
   User
 } from 'lucide-react';
@@ -62,7 +62,7 @@ export default function Navigation() {
             <Clock className="h-6 w-6 text-primary" />
             <span className="font-semibold">TimeTracker</span>
           </div>
-          
+
           <div className="hidden md:flex items-center space-x-1">
             {navItems[user.role].map((item, index) => (
               <Button
@@ -95,10 +95,6 @@ export default function Navigation() {
             <DropdownMenuItem onClick={() => navigate('/profile')}>
               <User className="mr-2 h-4 w-4" />
               Perfil
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate('/')}>
-              <Settings className="mr-2 h-4 w-4" />
-              Configuración
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>

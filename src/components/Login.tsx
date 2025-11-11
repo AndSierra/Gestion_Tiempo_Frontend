@@ -92,7 +92,7 @@ export default function Login() {
             <p className="text-sm text-muted-foreground mb-2">Usuarios de prueba:</p>
             <div className="space-y-1 text-xs">
               <p><strong>Admin:</strong> admin@timetracker.com</p>
-              <p><strong>Líder:</strong> maria@timetracker.com</p>
+              <p><strong>Líder:</strong> paula@timetracker.com</p>
               <p><strong>Desarrollador:</strong> harry@timetracker.com</p>
               <p className="mt-2"><strong>Contraseña para admin:</strong> admin123</p>
               <p><strong>Contraseña para líder:</strong> leader123</p>

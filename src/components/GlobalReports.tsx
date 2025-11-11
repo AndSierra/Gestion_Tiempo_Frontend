@@ -39,8 +39,8 @@ export default function GlobalReports() {
   const exportJSON = () => {
     const data = {
       filtros: {
-        cliente: filters.clientId !== 'all' 
-          ? clients.find(c => c.id === parseInt(filters.clientId))?.name 
+        cliente: filters.clientId !== 'all'
+          ? clients.find(c => c.id === parseInt(filters.clientId))?.name
           : 'Todos',
         proyecto: filters.projectId !== 'all'
           ? projects.find(p => p.id === parseInt(filters.projectId))?.name
@@ -127,9 +127,9 @@ export default function GlobalReports() {
   }).filter(stat => stat.hours > 0);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50">
       <Navigation />
-      
+
       <div className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="mb-8">
@@ -149,7 +149,7 @@ export default function GlobalReports() {
                   <label className="text-sm mb-2 block">Cliente</label>
                   <Select
                     value={filters.clientId}
-                    onValueChange={(value) => setFilters({...filters, clientId: value, projectId: 'all'})}
+                    onValueChange={(value) => setFilters({ ...filters, clientId: value, projectId: 'all' })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -169,7 +169,7 @@ export default function GlobalReports() {
                   <label className="text-sm mb-2 block">Proyecto</label>
                   <Select
                     value={filters.projectId}
-                    onValueChange={(value) => setFilters({...filters, projectId: value})}
+                    onValueChange={(value) => setFilters({ ...filters, projectId: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -191,7 +191,7 @@ export default function GlobalReports() {
                   <label className="text-sm mb-2 block">Usuario</label>
                   <Select
                     value={filters.userId}
-                    onValueChange={(value) => setFilters({...filters, userId: value})}
+                    onValueChange={(value) => setFilters({ ...filters, userId: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -213,7 +213,7 @@ export default function GlobalReports() {
                     type="date"
                     className="w-full px-3 py-2 border rounded-md"
                     value={filters.startDate}
-                    onChange={(e) => setFilters({...filters, startDate: e.target.value})}
+                    onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
                   />
                 </div>
 
@@ -223,7 +223,7 @@ export default function GlobalReports() {
                     type="date"
                     className="w-full px-3 py-2 border rounded-md"
                     value={filters.endDate}
-                    onChange={(e) => setFilters({...filters, endDate: e.target.value})}
+                    onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
                   />
                 </div>
 
@@ -259,8 +259,8 @@ export default function GlobalReports() {
               <CardContent className="p-6">
                 <p className="text-sm text-gray-600">Promedio Horas/Registro</p>
                 <p className="text-3xl mt-2">
-                  {filteredEntries.length > 0 
-                    ? (totalHours / filteredEntries.length).toFixed(1) 
+                  {filteredEntries.length > 0
+                    ? (totalHours / filteredEntries.length).toFixed(1)
                     : 0}
                 </p>
               </CardContent>

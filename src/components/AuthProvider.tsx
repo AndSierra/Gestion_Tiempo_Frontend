@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       const response = await authApi.login(email, password);
-      
+
       if (response.success && response.data) {
         const userSession: User = {
           id: response.data.id,

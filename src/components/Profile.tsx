@@ -124,7 +124,7 @@ export default function Profile() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50">
       <Navigation />
       
       <div className="flex-1 overflow-auto">
@@ -330,7 +330,7 @@ export default function Profile() {
                 <div>
                   <p className="text-gray-600">Backend URL</p>
                   <p className="font-mono text-xs">
-                    {import.meta.env.VITE_API_URL || 'http://localhost:3001/api'}
+                    {(import.meta as any).env?.VITE_API_URL || 'http://localhost:3001/api'}
                   </p>
                 </div>
                 <div>

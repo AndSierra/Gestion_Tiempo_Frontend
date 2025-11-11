@@ -37,7 +37,7 @@ export default function LeaderDashboard() {
       .forEach(entry => developerIds.add(entry.userId));
   });
 
-  const developers = users.filter(u => 
+  const developers = users.filter(u =>
     u.role === 'developer' && developerIds.has(u.id)
   );
 
@@ -45,7 +45,7 @@ export default function LeaderDashboard() {
   const generateCalendar = () => {
     const [year, month] = selectedMonth.split('-').map(Number);
     const daysInMonth = new Date(year, month, 0).getDate();
-    
+
     const calendar = [];
     for (let i = 1; i <= daysInMonth; i++) {
       calendar.push(new Date(year, month - 1, i));
@@ -58,8 +58,8 @@ export default function LeaderDashboard() {
   const getDayHours = (developerId: number, date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     return timeEntries
-      .filter(entry => 
-        entry.userId === developerId && 
+      .filter(entry =>
+        entry.userId === developerId &&
         entry.date === dateStr
       )
       .reduce((sum, entry) => sum + entry.hours, 0);
@@ -67,8 +67,8 @@ export default function LeaderDashboard() {
 
   const getDayEntries = (developerId: number, date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return timeEntries.filter(entry => 
-      entry.userId === developerId && 
+    return timeEntries.filter(entry =>
+      entry.userId === developerId &&
       entry.date === dateStr
     );
   };
@@ -172,9 +172,9 @@ export default function LeaderDashboard() {
   }, 0);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50">
       <Navigation />
-      
+
       <div className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="mb-8">

@@ -207,7 +207,7 @@ export default function DeveloperDashboard() {
   })();
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50">
       <Navigation />
       
       <div className="flex-1 overflow-auto">
@@ -277,7 +277,7 @@ export default function DeveloperDashboard() {
                       <Label htmlFor="project">Proyecto</Label>
                       <Select
                         value={newEntry.projectId}
-                        onValueChange={(value) =>
+                        onValueChange={(value: any) =>
                           setNewEntry({ ...newEntry, projectId: value, taskName: '' })
                         }
                       >
@@ -345,7 +345,7 @@ export default function DeveloperDashboard() {
                           <Label htmlFor="task">Tarea</Label>
                           <Select
                             value={newEntry.taskName}
-                            onValueChange={(value) =>
+                            onValueChange={(value: any) =>
                               setNewEntry({ ...newEntry, taskName: value })
                             }
                           >

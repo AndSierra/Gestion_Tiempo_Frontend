@@ -15,13 +15,13 @@ import {
   TableHeader, 
   TableRow 
 } from './ui/table';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from './ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Badge } from './ui/badge';
@@ -44,41 +44,41 @@ import type { User, Client, Project, Template } from '../lib/api';
 export default function AdminDashboard() {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   // Cargar datos desde la API
   const { clients, loading: clientsLoading, reload: reloadClients } = useClients();
   const { projects, loading: projectsLoading, reload: reloadProjects } = useProjects();
   const { users, loading: usersLoading, reload: reloadUsers } = useUsers();
   const { templates, loading: templatesLoading, reload: reloadTemplates } = useTemplates();
   const { timeEntries } = useTimeEntries();
-  
+
   // Handle tab from URL hash
   const getTabFromHash = () => {
     const hash = location.hash.replace('#', '');
     return hash || 'clients';
   };
-  
+
   const [activeTab, setActiveTab] = useState(getTabFromHash());
-  
+
   useEffect(() => {
     setActiveTab(getTabFromHash());
   }, [location.hash]);
-  
+
   // Client state
   const [newClient, setNewClient] = useState({ name: '', description: '' });
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
-  
+
   // Project state
-  const [newProject, setNewProject] = useState({ name: '', clientId: '', leaderId: '', tasks: '' });
+  const [newProject, setNewProject] = useState({ name: '', clientId: '', leaderId: '', tasks: '', developerIds: [] as number[] });
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
-  
+
   // User state
   const [newUser, setNewUser] = useState({ name: '', email: '', role: 'developer' as 'admin' | 'leader' | 'developer', password: 'default123' });
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
-  
+
   // Template state
   const [newTemplate, setNewTemplate] = useState({ name: '', description: '', tasks: '' });
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
@@ -100,7 +100,7 @@ export default function AdminDashboard() {
       toast.error('El nombre del cliente es requerido');
       return;
     }
-    
+
     try {
       await clientsApi.create({
         name: newClient.name,
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
 
   const handleUpdateClient = async () => {
     if (!editingClient) return;
-    
+
     try {
       await clientsApi.update(editingClient.id, {
         name: editingClient.name,
@@ -134,7 +134,7 @@ export default function AdminDashboard() {
 
   const handleDeleteClient = async (clientId: number) => {
     if (!confirm('¿Está seguro de eliminar este cliente?')) return;
-    
+
     try {
       await clientsApi.delete(clientId);
       toast.success('Cliente eliminado');
@@ -161,15 +161,16 @@ export default function AdminDashboard() {
       toast.error('Todos los campos son requeridos');
       return;
     }
-    
+
     try {
       await projectsApi.create({
         name: newProject.name,
         clientId: parseInt(newProject.clientId),
         leaderId: parseInt(newProject.leaderId),
-        tasks: newProject.tasks
+        tasks: newProject.tasks,
+        developerIds: newProject.developerIds
       });
-      setNewProject({ name: '', clientId: '', leaderId: '', tasks: '' });
+      setNewProject({ name: '', clientId: '', leaderId: '', tasks: '', developerIds: [] });
       setIsProjectDialogOpen(false);
       toast.success('Proyecto creado exitosamente');
       reloadProjects();
@@ -180,13 +181,14 @@ export default function AdminDashboard() {
 
   const handleUpdateProject = async () => {
     if (!editingProject) return;
-    
+
     try {
       await projectsApi.update(editingProject.id, {
         name: editingProject.name,
         clientId: editingProject.clientId,
         leaderId: editingProject.leaderId,
-        tasks: editingProject.tasks
+        tasks: editingProject.tasks,
+        developerIds: editingProject.developerIds
       });
       setEditingProject(null);
       setIsProjectDialogOpen(false);
@@ -199,7 +201,7 @@ export default function AdminDashboard() {
 
   const handleDeleteProject = async (projectId: number) => {
     if (!confirm('¿Está seguro de eliminar este proyecto?')) return;
-    
+
     try {
       await projectsApi.delete(projectId);
       toast.success('Proyecto eliminado');
@@ -210,14 +212,16 @@ export default function AdminDashboard() {
   };
 
   const openEditProjectDialog = (project: Project) => {
-    setEditingProject(project);
+    // Obtener los IDs de los desarrolladores del proyecto
+    const developerIds = (project.developers || []).map(dev => dev.id);
+    setEditingProject({...project, developerIds});
     setIsProjectDialogOpen(true);
   };
 
   const closeProjectDialog = () => {
     setIsProjectDialogOpen(false);
     setEditingProject(null);
-    setNewProject({ name: '', clientId: '', leaderId: '', tasks: '' });
+    setNewProject({ name: '', clientId: '', leaderId: '', tasks: '', developerIds: [] });
   };
 
   // USER HANDLERS
@@ -226,7 +230,7 @@ export default function AdminDashboard() {
       toast.error('Todos los campos son requeridos');
       return;
     }
-    
+
     try {
       await usersApi.create({
         name: newUser.name,
@@ -245,7 +249,7 @@ export default function AdminDashboard() {
 
   const handleUpdateUser = async () => {
     if (!editingUser) return;
-    
+
     try {
       await usersApi.update(editingUser.id, {
         name: editingUser.name,
@@ -263,7 +267,7 @@ export default function AdminDashboard() {
 
   const handleDeleteUser = async (userId: number) => {
     if (!confirm('¿Está seguro de eliminar este usuario?')) return;
-    
+
     try {
       await usersApi.delete(userId);
       toast.success('Usuario eliminado');
@@ -290,7 +294,7 @@ export default function AdminDashboard() {
       toast.error('Nombre y tareas son requeridos');
       return;
     }
-    
+
     try {
       await templatesApi.create({
         name: newTemplate.name,
@@ -308,7 +312,7 @@ export default function AdminDashboard() {
 
   const handleUpdateTemplate = async () => {
     if (!editingTemplate) return;
-    
+
     try {
       await templatesApi.update(editingTemplate.id, {
         name: editingTemplate.name,
@@ -326,7 +330,7 @@ export default function AdminDashboard() {
 
   const handleDeleteTemplate = async (templateId: number) => {
     if (!confirm('¿Está seguro de eliminar esta plantilla?')) return;
-    
+
     try {
       await templatesApi.delete(templateId);
       toast.success('Plantilla eliminada');
@@ -337,7 +341,7 @@ export default function AdminDashboard() {
   };
 
   const openEditTemplateDialog = (template: Template) => {
-    setEditingTemplate({...template});
+    setEditingTemplate({ ...template });
     setIsTemplateDialogOpen(true);
   };
 
@@ -356,7 +360,7 @@ export default function AdminDashboard() {
       templates,
       timeEntries
     };
-    
+
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -370,9 +374,9 @@ export default function AdminDashboard() {
   const loading = clientsLoading || projectsLoading || usersLoading || templatesLoading;
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50">
       <Navigation />
-      
+
       <div className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="mb-8">
@@ -435,9 +439,9 @@ export default function AdminDashboard() {
                             <Input
                               id="clientName"
                               value={editingClient ? editingClient.name : newClient.name}
-                              onChange={(e) => editingClient 
-                                ? setEditingClient({...editingClient, name: e.target.value})
-                                : setNewClient({...newClient, name: e.target.value})
+                              onChange={(e) => editingClient
+                                ? setEditingClient({ ...editingClient, name: e.target.value })
+                                : setNewClient({ ...newClient, name: e.target.value })
                               }
                               placeholder="Nombre del cliente"
                             />
@@ -448,15 +452,15 @@ export default function AdminDashboard() {
                               id="clientDescription"
                               value={editingClient ? editingClient.description || '' : newClient.description}
                               onChange={(e) => editingClient
-                                ? setEditingClient({...editingClient, description: e.target.value})
-                                : setNewClient({...newClient, description: e.target.value})
+                                ? setEditingClient({ ...editingClient, description: e.target.value })
+                                : setNewClient({ ...newClient, description: e.target.value })
                               }
                               placeholder="Descripción opcional"
                             />
                           </div>
                           <div className="flex space-x-2">
-                            <Button 
-                              onClick={editingClient ? handleUpdateClient : handleCreateClient} 
+                            <Button
+                              onClick={editingClient ? handleUpdateClient : handleCreateClient}
                               className="flex-1"
                             >
                               {editingClient ? 'Actualizar Cliente' : 'Crear Cliente'}
@@ -489,16 +493,16 @@ export default function AdminDashboard() {
                             <TableCell>{client.description || '-'}</TableCell>
                             <TableCell>
                               <div className="flex space-x-2">
-                                <Button 
-                                  variant="ghost" 
+                                <Button
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => openEditClientDialog(client)}
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => handleDeleteClient(client.id)}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
@@ -544,8 +548,8 @@ export default function AdminDashboard() {
                               id="projectName"
                               value={editingProject ? editingProject.name : newProject.name}
                               onChange={(e) => editingProject
-                                ? setEditingProject({...editingProject, name: e.target.value})
-                                : setNewProject({...newProject, name: e.target.value})
+                                ? setEditingProject({ ...editingProject, name: e.target.value })
+                                : setNewProject({ ...newProject, name: e.target.value })
                               }
                               placeholder="Nombre del proyecto"
                             />
@@ -553,10 +557,10 @@ export default function AdminDashboard() {
                           <div>
                             <Label htmlFor="projectClient">Cliente</Label>
                             <Select
-                              value={editingProject ? editingProject.clientId.toString() : newProject.clientId}
-                              onValueChange={(value: string) => editingProject
-                                ? setEditingProject({...editingProject, clientId: parseInt(value)})
-                                : setNewProject({...newProject, clientId: value})
+                              value={editingProject ? (editingProject.clientId?.toString() || '') : newProject.clientId}
+                              onValueChange={(value) => editingProject
+                                ? setEditingProject({ ...editingProject, clientId: parseInt(value) })
+                                : setNewProject({ ...newProject, clientId: value })
                               }
                             >
                               <SelectTrigger>
@@ -574,10 +578,10 @@ export default function AdminDashboard() {
                           <div>
                             <Label htmlFor="projectLeader">Líder del Proyecto</Label>
                             <Select
-                              value={editingProject ? editingProject.leaderId.toString() : newProject.leaderId}
+                              value={editingProject ? (editingProject.clientId?.toString() || '') : newProject.leaderId}
                               onValueChange={(value: string) => editingProject
-                                ? setEditingProject({...editingProject, leaderId: parseInt(value)})
-                                : setNewProject({...newProject, leaderId: value})
+                                ? setEditingProject({ ...editingProject, leaderId: parseInt(value) })
+                                : setNewProject({ ...newProject, leaderId: value })
                               }
                             >
                               <SelectTrigger>
@@ -592,21 +596,88 @@ export default function AdminDashboard() {
                               </SelectContent>
                             </Select>
                           </div>
+                          
+                          {/* Selector de Plantilla */}
+                          {!editingProject && (
+                            <div>
+                              <Label htmlFor="projectTemplate">Plantilla (Opcional)</Label>
+                              <Select
+                                value=""
+                                onValueChange={(value) => {
+                                  const template = templates.find(t => t.id.toString() === value);
+                                  if (template) {
+                                    setNewProject({...newProject, tasks: template.tasks});
+                                    toast.success('Tareas cargadas desde la plantilla');
+                                  }
+                                }}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Cargar desde plantilla" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {templates.map((template) => (
+                                    <SelectItem key={template.id} value={template.id.toString()}>
+                                      {template.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                          
                           <div>
                             <Label htmlFor="projectTasks">Tareas (separadas por coma)</Label>
                             <Textarea
                               id="projectTasks"
                               value={editingProject ? editingProject.tasks : newProject.tasks}
                               onChange={(e) => editingProject
-                                ? setEditingProject({...editingProject, tasks: e.target.value})
-                                : setNewProject({...newProject, tasks: e.target.value})
+                                ? setEditingProject({ ...editingProject, tasks: e.target.value })
+                                : setNewProject({ ...newProject, tasks: e.target.value })
                               }
                               placeholder="Frontend, Backend, Testing, Deployment"
                             />
                           </div>
+                          
+                          {/* Selector de Desarrolladores */}
+                          <div>
+                            <Label>Desarrolladores Asignados</Label>
+                            <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                              {users.filter(u => u.role === 'developer').map((developer) => (
+                                <label key={developer.id} className="flex items-center space-x-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={editingProject 
+                                      ? (editingProject.developerIds || []).includes(developer.id)
+                                      : newProject.developerIds.includes(developer.id)
+                                    }
+                                    onChange={(e) => {
+                                      if (editingProject) {
+                                        const currentIds = editingProject.developerIds || [];
+                                        const newIds = e.target.checked
+                                          ? [...currentIds, developer.id]
+                                          : currentIds.filter(id => id !== developer.id);
+                                        setEditingProject({...editingProject, developerIds: newIds});
+                                      } else {
+                                        const newIds = e.target.checked
+                                          ? [...newProject.developerIds, developer.id]
+                                          : newProject.developerIds.filter(id => id !== developer.id);
+                                        setNewProject({...newProject, developerIds: newIds});
+                                      }
+                                    }}
+                                    className="rounded"
+                                  />
+                                  <span className="text-sm">{developer.name} ({developer.email})</span>
+                                </label>
+                              ))}
+                              {users.filter(u => u.role === 'developer').length === 0 && (
+                                <p className="text-sm text-muted-foreground">No hay desarrolladores disponibles</p>
+                              )}
+                            </div>
+                          </div>
+                          
                           <div className="flex space-x-2">
-                            <Button 
-                              onClick={editingProject ? handleUpdateProject : handleCreateProject} 
+                            <Button
+                              onClick={editingProject ? handleUpdateProject : handleCreateProject}
                               className="flex-1"
                             >
                               {editingProject ? 'Actualizar Proyecto' : 'Crear Proyecto'}
@@ -645,16 +716,16 @@ export default function AdminDashboard() {
                             </TableCell>
                             <TableCell>
                               <div className="flex space-x-2">
-                                <Button 
-                                  variant="ghost" 
+                                <Button
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => openEditProjectDialog(project)}
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => handleDeleteProject(project.id)}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
@@ -700,8 +771,8 @@ export default function AdminDashboard() {
                               id="userName"
                               value={editingUser ? editingUser.name : newUser.name}
                               onChange={(e) => editingUser
-                                ? setEditingUser({...editingUser, name: e.target.value})
-                                : setNewUser({...newUser, name: e.target.value})
+                                ? setEditingUser({ ...editingUser, name: e.target.value })
+                                : setNewUser({ ...newUser, name: e.target.value })
                               }
                               placeholder="Nombre completo"
                             />
@@ -713,8 +784,8 @@ export default function AdminDashboard() {
                               type="email"
                               value={editingUser ? editingUser.email : newUser.email}
                               onChange={(e) => editingUser
-                                ? setEditingUser({...editingUser, email: e.target.value})
-                                : setNewUser({...newUser, email: e.target.value})
+                                ? setEditingUser({ ...editingUser, email: e.target.value })
+                                : setNewUser({ ...newUser, email: e.target.value })
                               }
                               placeholder="email@ejemplo.com"
                             />
@@ -726,7 +797,7 @@ export default function AdminDashboard() {
                                 id="userPassword"
                                 type="password"
                                 value={newUser.password}
-                                onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+                                onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                                 placeholder="Contraseña"
                               />
                             </div>
@@ -736,8 +807,8 @@ export default function AdminDashboard() {
                             <Select
                               value={editingUser ? editingUser.role : newUser.role}
                               onValueChange={(value: 'admin' | 'leader' | 'developer') => editingUser
-                                ? setEditingUser({...editingUser, role: value})
-                                : setNewUser({...newUser, role: value})
+                                ? setEditingUser({ ...editingUser, role: value })
+                                : setNewUser({ ...newUser, role: value })
                               }
                             >
                               <SelectTrigger>
@@ -751,8 +822,8 @@ export default function AdminDashboard() {
                             </Select>
                           </div>
                           <div className="flex space-x-2">
-                            <Button 
-                              onClick={editingUser ? handleUpdateUser : handleCreateUser} 
+                            <Button
+                              onClick={editingUser ? handleUpdateUser : handleCreateUser}
                               className="flex-1"
                             >
                               {editingUser ? 'Actualizar Usuario' : 'Crear Usuario'}
@@ -786,27 +857,27 @@ export default function AdminDashboard() {
                             <TableCell>{user.email}</TableCell>
                             <TableCell>
                               <Badge variant={
-                                user.role === 'admin' ? 'destructive' : 
-                                user.role === 'leader' ? 'default' : 
-                                'secondary'
+                                user.role === 'admin' ? 'destructive' :
+                                  user.role === 'leader' ? 'default' :
+                                    'secondary'
                               }>
-                                {user.role === 'admin' ? 'Administrador' : 
-                                 user.role === 'leader' ? 'Líder' : 
-                                 'Desarrollador'}
+                                {user.role === 'admin' ? 'Administrador' :
+                                  user.role === 'leader' ? 'Líder' :
+                                    'Desarrollador'}
                               </Badge>
                             </TableCell>
                             <TableCell>
                               <div className="flex space-x-2">
-                                <Button 
-                                  variant="ghost" 
+                                <Button
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => openEditUserDialog(user)}
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => handleDeleteUser(user.id)}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />
@@ -852,8 +923,8 @@ export default function AdminDashboard() {
                               id="templateName"
                               value={editingTemplate ? editingTemplate.name : newTemplate.name}
                               onChange={(e) => editingTemplate
-                                ? setEditingTemplate({...editingTemplate, name: e.target.value})
-                                : setNewTemplate({...newTemplate, name: e.target.value})
+                                ? setEditingTemplate({ ...editingTemplate, name: e.target.value })
+                                : setNewTemplate({ ...newTemplate, name: e.target.value })
                               }
                               placeholder="Nombre de la plantilla"
                             />
@@ -864,8 +935,8 @@ export default function AdminDashboard() {
                               id="templateDescription"
                               value={editingTemplate ? editingTemplate.description || '' : newTemplate.description}
                               onChange={(e) => editingTemplate
-                                ? setEditingTemplate({...editingTemplate, description: e.target.value})
-                                : setNewTemplate({...newTemplate, description: e.target.value})
+                                ? setEditingTemplate({ ...editingTemplate, description: e.target.value })
+                                : setNewTemplate({ ...newTemplate, description: e.target.value })
                               }
                               placeholder="Descripción de la plantilla"
                             />
@@ -876,15 +947,15 @@ export default function AdminDashboard() {
                               id="templateTasks"
                               value={editingTemplate ? editingTemplate.tasks : newTemplate.tasks}
                               onChange={(e) => editingTemplate
-                                ? setEditingTemplate({...editingTemplate, tasks: e.target.value})
-                                : setNewTemplate({...newTemplate, tasks: e.target.value})
+                                ? setEditingTemplate({ ...editingTemplate, tasks: e.target.value })
+                                : setNewTemplate({ ...newTemplate, tasks: e.target.value })
                               }
                               placeholder="Frontend, Backend, Testing, Deployment"
                             />
                           </div>
                           <div className="flex space-x-2">
-                            <Button 
-                              onClick={editingTemplate ? handleUpdateTemplate : handleCreateTemplate} 
+                            <Button
+                              onClick={editingTemplate ? handleUpdateTemplate : handleCreateTemplate}
                               className="flex-1"
                             >
                               {editingTemplate ? 'Actualizar Plantilla' : 'Crear Plantilla'}
@@ -921,16 +992,16 @@ export default function AdminDashboard() {
                             </TableCell>
                             <TableCell>
                               <div className="flex space-x-2">
-                                <Button 
-                                  variant="ghost" 
+                                <Button
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => openEditTemplateDialog(template)}
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
                                   onClick={() => handleDeleteTemplate(template.id)}
                                 >
                                   <Trash2 className="h-4 w-4 text-destructive" />

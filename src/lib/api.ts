@@ -37,6 +37,8 @@ export interface Project {
   tasks: string;
   clientName?: string;
   leaderName?: string;
+  developerIds?: number[];
+  developers?: User[];
   created_at?: string;
 }
 

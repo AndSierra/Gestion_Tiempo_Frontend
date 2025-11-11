@@ -34,7 +34,7 @@ export default function ProjectManagement() {
 
   const handleApplyTemplate = () => {
     if (!selectedTemplateId) return;
-    
+
     const template = templates.find(t => t.id === parseInt(selectedTemplateId));
     if (template) {
       setNewProject({
@@ -112,9 +112,9 @@ export default function ProjectManagement() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50">
       <Navigation />
-      
+
       <div className="flex-1 overflow-auto">
         <div className="p-8">
           <div className="mb-8">
@@ -142,8 +142,8 @@ export default function ProjectManagement() {
                         {editingProject ? 'Editar Proyecto' : 'Crear Nuevo Proyecto'}
                       </DialogTitle>
                       <DialogDescription>
-                        {editingProject 
-                          ? 'Modifique los datos del proyecto' 
+                        {editingProject
+                          ? 'Modifique los datos del proyecto'
                           : 'Complete los datos del nuevo proyecto'}
                       </DialogDescription>
                     </DialogHeader>
@@ -164,8 +164,8 @@ export default function ProjectManagement() {
                                 ))}
                               </SelectContent>
                             </Select>
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               onClick={handleApplyTemplate}
                               disabled={!selectedTemplateId}
                             >
@@ -182,8 +182,8 @@ export default function ProjectManagement() {
                           id="projectName"
                           value={editingProject ? editingProject.name : newProject.name}
                           onChange={(e) => editingProject
-                            ? setEditingProject({...editingProject, name: e.target.value})
-                            : setNewProject({...newProject, name: e.target.value})
+                            ? setEditingProject({ ...editingProject, name: e.target.value })
+                            : setNewProject({ ...newProject, name: e.target.value })
                           }
                           placeholder="Nombre del proyecto"
                         />
@@ -193,10 +193,15 @@ export default function ProjectManagement() {
                         <div>
                           <Label htmlFor="client">Cliente</Label>
                           <Select
-                            value={editingProject ? editingProject.clientId.toString() : newProject.clientId}
-                            onValueChange={(value) => editingProject
-                              ? setEditingProject({...editingProject, clientId: parseInt(value)})
-                              : setNewProject({...newProject, clientId: value})
+                            value={
+                              editingProject
+                                ? editingProject.clientId?.toString() ?? ""
+                                : newProject.clientId?.toString() ?? ""
+                            }
+                            onValueChange={(value: string) =>
+                              editingProject
+                                ? setEditingProject({ ...editingProject, clientId: parseInt(value) })
+                                : setNewProject({ ...newProject, clientId: value })
                             }
                           >
                             <SelectTrigger>
@@ -215,10 +220,10 @@ export default function ProjectManagement() {
                         <div>
                           <Label htmlFor="leader">Líder del Proyecto</Label>
                           <Select
-                            value={editingProject ? editingProject.leaderId.toString() : newProject.leaderId}
-                            onValueChange={(value) => editingProject
-                              ? setEditingProject({...editingProject, leaderId: parseInt(value)})
-                              : setNewProject({...newProject, leaderId: value})
+                            value={editingProject ? (editingProject.clientId?.toString() || '') : newProject.leaderId}
+                            onValueChange={(value: string) => editingProject
+                              ? setEditingProject({ ...editingProject, leaderId: parseInt(value) })
+                              : setNewProject({ ...newProject, leaderId: value })
                             }
                           >
                             <SelectTrigger>
@@ -241,8 +246,8 @@ export default function ProjectManagement() {
                           id="tasks"
                           value={editingProject ? editingProject.tasks : newProject.tasks}
                           onChange={(e) => editingProject
-                            ? setEditingProject({...editingProject, tasks: e.target.value})
-                            : setNewProject({...newProject, tasks: e.target.value})
+                            ? setEditingProject({ ...editingProject, tasks: e.target.value })
+                            : setNewProject({ ...newProject, tasks: e.target.value })
                           }
                           placeholder="Frontend, Backend, Testing, Deployment"
                           rows={4}
@@ -253,7 +258,7 @@ export default function ProjectManagement() {
                       </div>
 
                       <div className="flex space-x-2">
-                        <Button 
+                        <Button
                           onClick={editingProject ? handleUpdateProject : handleCreateProject}
                           className="flex-1"
                         >
