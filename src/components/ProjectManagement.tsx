@@ -24,7 +24,8 @@ export default function ProjectManagement() {
     name: '',
     clientId: '',
     leaderId: '',
-    tasks: ''
+    tasks: '',
+    developerIds: [] as number[]
   });
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -56,9 +57,10 @@ export default function ProjectManagement() {
         name: newProject.name,
         clientId: parseInt(newProject.clientId),
         leaderId: parseInt(newProject.leaderId),
-        tasks: newProject.tasks
+        tasks: newProject.tasks,
+        developerIds: newProject.developerIds
       });
-      setNewProject({ name: '', clientId: '', leaderId: '', tasks: '' });
+      setNewProject({ name: '', clientId: '', leaderId: '', tasks: '', developerIds: [] });
       setSelectedTemplateId('');
       setIsDialogOpen(false);
       toast.success('Proyecto creado exitosamente');
@@ -74,9 +76,10 @@ export default function ProjectManagement() {
     try {
       await projectsApi.update(editingProject.id, {
         name: editingProject.name,
-        clientId: editingProject.clientId,
-        leaderId: editingProject.leaderId,
-        tasks: editingProject.tasks
+        clientId: typeof editingProject.clientId === 'string' ? parseInt(editingProject.clientId) : editingProject.clientId,
+        leaderId: typeof editingProject.leaderId === 'string' ? parseInt(editingProject.leaderId) : editingProject.leaderId,
+        tasks: editingProject.tasks,
+        developerIds: editingProject.developerIds
       });
       setEditingProject(null);
       setIsDialogOpen(false);
@@ -100,14 +103,22 @@ export default function ProjectManagement() {
   };
 
   const openEditDialog = (project: Project) => {
-    setEditingProject(project);
+    // Normalizar los datos: convertir snake_case a camelCase y asegurar tipos correctos
+    const developerIds = (project.developers || []).map(dev => dev.id);
+    const normalizedProject: Project = {
+      ...project,
+      clientId: project.clientId ?? project.client_id ?? 0,
+      leaderId: project.leaderId ?? project.leader_id ?? 0,
+      developerIds
+    };
+    setEditingProject(normalizedProject);
     setIsDialogOpen(true);
   };
 
   const closeDialog = () => {
     setIsDialogOpen(false);
     setEditingProject(null);
-    setNewProject({ name: '', clientId: '', leaderId: '', tasks: '' });
+    setNewProject({ name: '', clientId: '', leaderId: '', tasks: '', developerIds: [] });
     setSelectedTemplateId('');
   };
 
@@ -168,6 +179,7 @@ export default function ProjectManagement() {
                               variant="outline"
                               onClick={handleApplyTemplate}
                               disabled={!selectedTemplateId}
+                              title="Aplicar plantilla seleccionada"
                             >
                               <FolderPlus className="h-4 w-4 mr-2" />
                               Aplicar
@@ -193,15 +205,10 @@ export default function ProjectManagement() {
                         <div>
                           <Label htmlFor="client">Cliente</Label>
                           <Select
-                            value={
-                              editingProject
-                                ? editingProject.clientId?.toString() ?? ""
-                                : newProject.clientId?.toString() ?? ""
-                            }
-                            onValueChange={(value: string) =>
-                              editingProject
-                                ? setEditingProject({ ...editingProject, clientId: parseInt(value) })
-                                : setNewProject({ ...newProject, clientId: value })
+                            value={editingProject ? (editingProject.clientId?.toString() || '') : (newProject.clientId || '')}
+                            onValueChange={(value) => editingProject
+                              ? setEditingProject({ ...editingProject, clientId: parseInt(value) })
+                              : setNewProject({ ...newProject, clientId: value })
                             }
                           >
                             <SelectTrigger>
@@ -220,8 +227,8 @@ export default function ProjectManagement() {
                         <div>
                           <Label htmlFor="leader">Líder del Proyecto</Label>
                           <Select
-                            value={editingProject ? (editingProject.clientId?.toString() || '') : newProject.leaderId}
-                            onValueChange={(value: string) => editingProject
+                            value={editingProject ? (editingProject.leaderId?.toString() || '') : (newProject.leaderId || '')}
+                            onValueChange={(value) => editingProject
                               ? setEditingProject({ ...editingProject, leaderId: parseInt(value) })
                               : setNewProject({ ...newProject, leaderId: value })
                             }
@@ -255,6 +262,43 @@ export default function ProjectManagement() {
                         <p className="text-xs text-gray-500 mt-1">
                           Ingrese las tareas separadas por comas. Estas tareas estarán disponibles para los desarrolladores.
                         </p>
+                      </div>
+
+                      {/* Selector de Desarrolladores */}
+                      <div>
+                        <Label>Desarrolladores Asignados</Label>
+                        <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                          {users.filter(u => u.role === 'developer').map((developer) => (
+                            <label key={developer.id} className="flex items-center space-x-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={editingProject
+                                  ? (editingProject.developerIds || []).includes(developer.id)
+                                  : newProject.developerIds.includes(developer.id)
+                                }
+                                onChange={(e) => {
+                                  if (editingProject) {
+                                    const currentIds = editingProject.developerIds || [];
+                                    const newIds = e.target.checked
+                                      ? [...currentIds, developer.id]
+                                      : currentIds.filter(id => id !== developer.id);
+                                    setEditingProject({ ...editingProject, developerIds: newIds });
+                                  } else {
+                                    const newIds = e.target.checked
+                                      ? [...newProject.developerIds, developer.id]
+                                      : newProject.developerIds.filter(id => id !== developer.id);
+                                    setNewProject({ ...newProject, developerIds: newIds });
+                                  }
+                                }}
+                                className="rounded"
+                              />
+                              <span className="text-sm">{developer.name} ({developer.email})</span>
+                            </label>
+                          ))}
+                          {users.filter(u => u.role === 'developer').length === 0 && (
+                            <p className="text-sm text-muted-foreground">No hay desarrolladores disponibles</p>
+                          )}
+                        </div>
                       </div>
 
                       <div className="flex space-x-2">
@@ -310,6 +354,7 @@ export default function ProjectManagement() {
                             variant="ghost"
                             size="sm"
                             onClick={() => openEditDialog(project)}
+                            title="Editar proyecto"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -317,6 +362,7 @@ export default function ProjectManagement() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteProject(project.id)}
+                            title="Eliminar proyecto"
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>

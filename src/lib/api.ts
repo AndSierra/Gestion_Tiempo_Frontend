@@ -30,9 +30,9 @@ export interface Client {
 export interface Project {
   id: number;
   name: string;
-  clientId: number;
+  clientId: number | string; 
   client_id?: number;
-  leaderId: number;
+  leaderId: number | string;  
   leader_id?: number;
   tasks: string;
   clientName?: string;
@@ -270,6 +270,11 @@ export const timeEntriesApi = {
     return handleResponse<TimeEntry[]>(response);
   },
 
+    async getByLeader(leaderId: number): Promise<ApiResponse<TimeEntry[]>> {
+    const response = await fetch(`${API_URL}/time-entries/leader/${leaderId}`);
+    return handleResponse<TimeEntry[]>(response);
+  },
+  
   async create(entry: Omit<TimeEntry, 'id' | 'userName' | 'projectName' | 'created_at'>): Promise<ApiResponse<TimeEntry>> {
     const response = await fetch(`${API_URL}/time-entries`, {
       method: 'POST',

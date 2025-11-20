@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAuth } from './AuthProvider';
 import Navigation from './Navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -12,38 +12,74 @@ import {
   TableHeader,
   TableRow
 } from './ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
+} from './ui/dialog';
 import { Calendar, Download, FileDown } from 'lucide-react';
 import { useProjects, useUsers, useTimeEntries } from '../lib/useDatabase';
 import { toast } from 'sonner';
 
 export default function LeaderDashboard() {
   const { user } = useAuth();
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  });
-  const [expandedCells, setExpandedCells] = useState<Set<string>>(new Set());
+  
+  // Estado para mes y año
+  const now = new Date();
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear().toString());
+  const [selectedMonth, setSelectedMonth] = useState(String(now.getMonth() + 1).padStart(2, '0'));
+  
+  const [selectedDayDialog, setSelectedDayDialog] = useState<{ developer: any; date: Date; entries: any[] } | null>(null);
 
   // Load data from API
   const { projects } = useProjects(user?.id);
   const { users } = useUsers();
-  const { timeEntries } = useTimeEntries();
+  const { timeEntries } = useTimeEntries(undefined, undefined, user?.id);
 
   // Get developers from projects led by this leader
   const developerIds = new Set<number>();
   projects.forEach(project => {
     timeEntries
-      .filter(entry => entry.projectId === project.id)
-      .forEach(entry => developerIds.add(entry.userId));
+      .filter(entry => entry.project_id === project.id || entry.projectId === project.id)
+      .forEach(entry => developerIds.add(entry.user_id || entry.userId));
   });
 
   const developers = users.filter(u =>
     u.role === 'developer' && developerIds.has(u.id)
   );
 
+  // Generar años disponibles (últimos 5 años + próximos 2)
+  const availableYears = useMemo(() => {
+    const years = [];
+    const currentYear = new Date().getFullYear();
+    for (let i = currentYear - 5; i <= currentYear + 2; i++) {
+      years.push(i);
+    }
+    return years;
+  }, []);
+
+  // Meses en español
+  const months = [
+    { value: '01', label: 'Enero' },
+    { value: '02', label: 'Febrero' },
+    { value: '03', label: 'Marzo' },
+    { value: '04', label: 'Abril' },
+    { value: '05', label: 'Mayo' },
+    { value: '06', label: 'Junio' },
+    { value: '07', label: 'Julio' },
+    { value: '08', label: 'Agosto' },
+    { value: '09', label: 'Septiembre' },
+    { value: '10', label: 'Octubre' },
+    { value: '11', label: 'Noviembre' },
+    { value: '12', label: 'Diciembre' }
+  ];
+
   // Generate calendar for selected month
   const generateCalendar = () => {
-    const [year, month] = selectedMonth.split('-').map(Number);
+    const year = parseInt(selectedYear);
+    const month = parseInt(selectedMonth);
     const daysInMonth = new Date(year, month, 0).getDate();
 
     const calendar = [];
@@ -58,19 +94,21 @@ export default function LeaderDashboard() {
   const getDayHours = (developerId: number, date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
     return timeEntries
-      .filter(entry =>
-        entry.userId === developerId &&
-        entry.date === dateStr
-      )
+      .filter(entry => {
+        const entryUserId = entry.user_id || entry.userId;
+        const entryDate = entry.date;
+        return entryUserId === developerId && entryDate === dateStr;
+      })
       .reduce((sum, entry) => sum + entry.hours, 0);
   };
 
   const getDayEntries = (developerId: number, date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return timeEntries.filter(entry =>
-      entry.userId === developerId &&
-      entry.date === dateStr
-    );
+    return timeEntries.filter(entry => {
+      const entryUserId = entry.user_id || entry.userId;
+      const entryDate = entry.date;
+      return entryUserId === developerId && entryDate === dateStr;
+    });
   };
 
   const getHourColor = (hours: number) => {
@@ -80,25 +118,10 @@ export default function LeaderDashboard() {
     return 'bg-red-200 text-red-800'; // 9+
   };
 
-  const toggleCell = (developerId: number, date: Date) => {
-    const cellKey = `${developerId}-${date.toISOString()}`;
-    const newExpanded = new Set(expandedCells);
-    if (newExpanded.has(cellKey)) {
-      newExpanded.delete(cellKey);
-    } else {
-      newExpanded.add(cellKey);
-    }
-    setExpandedCells(newExpanded);
-  };
-
-  const isCellExpanded = (developerId: number, date: Date): boolean => {
-    const cellKey = `${developerId}-${date.toISOString()}`;
-    return expandedCells.has(cellKey);
-  };
-
   const exportJSON = () => {
     const data = {
       mes: selectedMonth,
+      año: selectedYear,
       lider: user?.name || '',
       desarrolladores: developers.map(dev => ({
         nombre: dev.name,
@@ -110,10 +133,10 @@ export default function LeaderDashboard() {
               fecha: date.toISOString().split('T')[0],
               total_horas: getDayHours(dev.id, date),
               detalle: entries.map(entry => ({
-                proyecto: entry.projectName || `Proyecto ${entry.projectId}`,
-                tarea: entry.taskName,
-                inicio: entry.startTime,
-                fin: entry.endTime,
+                proyecto: entry.projectName || `Proyecto ${entry.projectId || entry.project_id}`,
+                tarea: entry.taskName || entry.task_name,
+                inicio: entry.startTime || entry.start_time,
+                fin: entry.endTime || entry.end_time,
                 horas: entry.hours
               }))
             };
@@ -126,7 +149,7 @@ export default function LeaderDashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte-horas-${selectedMonth}.json`;
+    a.download = `reporte-horas-${selectedYear}-${selectedMonth}.json`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Reporte exportado en formato JSON');
@@ -144,10 +167,10 @@ export default function LeaderDashboard() {
           rows.push([
             dev.name,
             date.toISOString().split('T')[0],
-            entry.projectName || `Proyecto ${entry.projectId}`,
-            entry.taskName,
-            entry.startTime,
-            entry.endTime,
+            entry.projectName || `Proyecto ${entry.projectId || entry.project_id}`,
+            entry.taskName || entry.task_name,
+            entry.startTime || entry.start_time,
+            entry.endTime || entry.end_time,
             entry.hours
           ].join(','));
         });
@@ -159,7 +182,7 @@ export default function LeaderDashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `reporte-horas-${selectedMonth}.csv`;
+    a.download = `reporte-horas-${selectedYear}-${selectedMonth}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast.success('Reporte exportado en formato CSV');
@@ -223,38 +246,53 @@ export default function LeaderDashboard() {
 
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-4">
                 <div>
                   <CardTitle>Vista Mensual de Horas</CardTitle>
                   <CardDescription>
                     Seguimiento de horas por desarrollador con código de colores
                   </CardDescription>
                 </div>
-                <div className="flex space-x-2 items-center">
+                <div className="flex space-x-2 items-center flex-wrap gap-2">
                   <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-[140px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="2024-01">Enero 2024</SelectItem>
-                      <SelectItem value="2024-02">Febrero 2024</SelectItem>
-                      <SelectItem value="2024-03">Marzo 2024</SelectItem>
-                      <SelectItem value="2024-04">Abril 2024</SelectItem>
-                      <SelectItem value="2024-05">Mayo 2024</SelectItem>
-                      <SelectItem value="2024-06">Junio 2024</SelectItem>
-                      <SelectItem value="2024-07">Julio 2024</SelectItem>
-                      <SelectItem value="2024-08">Agosto 2024</SelectItem>
-                      <SelectItem value="2024-09">Septiembre 2024</SelectItem>
-                      <SelectItem value="2024-10">Octubre 2024</SelectItem>
-                      <SelectItem value="2024-11">Noviembre 2024</SelectItem>
-                      <SelectItem value="2024-12">Diciembre 2024</SelectItem>
+                      {months.map(month => (
+                        <SelectItem key={month.value} value={month.value}>
+                          {month.label}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  <Button variant="outline" onClick={exportExcel}>
+
+                  <Select value={selectedYear} onValueChange={setSelectedYear}>
+                    <SelectTrigger className="w-[100px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableYears.map(year => (
+                        <SelectItem key={year} value={year.toString()}>
+                          {year}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Button 
+                    variant="outline" 
+                    onClick={exportExcel}
+                    title="Exportar en formato CSV"
+                  >
                     <FileDown className="h-4 w-4 mr-2" />
                     CSV
                   </Button>
-                  <Button variant="outline" onClick={exportJSON}>
+                  <Button 
+                    variant="outline" 
+                    onClick={exportJSON}
+                    title="Exportar en formato JSON"
+                  >
                     <Download className="h-4 w-4 mr-2" />
                     JSON
                   </Button>
@@ -263,7 +301,7 @@ export default function LeaderDashboard() {
             </CardHeader>
             <CardContent>
               {/* Legend */}
-              <div className="mb-6 flex gap-4 text-sm">
+              <div className="mb-6 flex gap-4 text-sm flex-wrap">
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 bg-gray-200 rounded"></div>
                   <span>0 horas</span>
@@ -308,39 +346,17 @@ export default function LeaderDashboard() {
                           {calendar.map((date) => {
                             const hours = getDayHours(developer.id, date);
                             const entries = getDayEntries(developer.id, date);
-                            const isExpanded = isCellExpanded(developer.id, date);
 
                             return (
                               <TableCell key={date.toISOString()} className="p-0">
                                 {entries.length > 0 ? (
-                                  <div>
-                                    <button
-                                      onClick={() => toggleCell(developer.id, date)}
-                                      className={`w-full h-12 flex items-center justify-center cursor-pointer transition-all ${getHourColor(hours)}`}
-                                    >
-                                      {hours}h
-                                    </button>
-                                    {isExpanded && (
-                                      <div className="absolute z-20 bg-white border border-gray-200 shadow-lg rounded-md p-3 mt-1 min-w-[250px]">
-                                        <div className="text-xs space-y-2">
-                                          <div className="border-b pb-2 mb-2">
-                                            <strong>{developer.name}</strong>
-                                            <br />
-                                            {date.toLocaleDateString()}
-                                          </div>
-                                          {entries.map((entry, idx) => (
-                                            <div key={idx} className="pb-2 border-b last:border-0">
-                                              <div className="font-medium">{entry.projectName || `Proyecto ${entry.projectId}`}</div>
-                                              <div className="text-gray-600">{entry.taskName}</div>
-                                              <div className="text-gray-500">
-                                                {entry.startTime} - {entry.endTime} ({entry.hours}h)
-                                              </div>
-                                            </div>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
+                                  <button
+                                    onClick={() => setSelectedDayDialog({ developer, date, entries })}
+                                    className={`w-full h-12 flex items-center justify-center cursor-pointer transition-all hover:opacity-80 ${getHourColor(hours)}`}
+                                    title={`Ver detalles de ${developer.name} en ${date.toLocaleDateString()}`}
+                                  >
+                                    {hours}h
+                                  </button>
                                 ) : (
                                   <div className={`w-full h-12 flex items-center justify-center ${getHourColor(0)}`}>
                                     0h
@@ -359,6 +375,81 @@ export default function LeaderDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Dialog para mostrar detalles del día */}
+      <Dialog open={!!selectedDayDialog} onOpenChange={() => setSelectedDayDialog(null)}>
+        <DialogContent className="max-w-2xl max-h-96 overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg">
+              Detalles de Horas - {selectedDayDialog?.developer.name}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedDayDialog?.date.toLocaleDateString('es-ES', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+              })}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedDayDialog && (
+            <div className="space-y-4">
+              {/* Resumen */}
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-gray-700">Total de horas del día:</span>
+                  <span className="text-2xl font-bold text-blue-600">
+                    {selectedDayDialog.entries.reduce((sum, entry) => sum + entry.hours, 0)}h
+                  </span>
+                </div>
+              </div>
+
+              {/* Lista de entradas */}
+              <div className="space-y-3">
+                {selectedDayDialog.entries.map((entry, idx) => (
+                  <div key={idx} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Proyecto</p>
+                        <p className="text-sm font-semibold text-gray-900 mt-1">
+                          {entry.projectName || `Proyecto ${entry.projectId || entry.project_id}`}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Tarea</p>
+                        <p className="text-sm text-gray-700 mt-1">{entry.taskName || entry.task_name}</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Inicio</p>
+                        <p className="text-sm font-medium text-gray-900 mt-1">{entry.startTime || entry.start_time}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Fin</p>
+                        <p className="text-sm font-medium text-gray-900 mt-1">{entry.endTime || entry.end_time}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Horas</p>
+                        <p className="text-sm font-bold text-blue-600 mt-1">{entry.hours}h</p>
+                      </div>
+                    </div>
+
+                    {entry.description && (
+                      <div className="mt-3 pt-3 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">Descripción</p>
+                        <p className="text-sm text-gray-600 mt-1">{entry.description}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

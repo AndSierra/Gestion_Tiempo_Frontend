@@ -109,6 +109,7 @@ export interface CreateProjectPayload {
   clientId: number;
   leaderId: number;
   tasks?: string;
+  developerIds?: number[];
 }
 
 // Payload para crear plantilla

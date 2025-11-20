@@ -99,8 +99,8 @@ export default function DeveloperDashboard() {
       return false;
     }
 
-    if (hours > 9) {
-      toast.error('No se pueden registrar más de 9 horas por día');
+    if (hours > 12) {
+      toast.error('No se pueden registrar más de 12 horas por día');
       return false;
     }
 
@@ -125,8 +125,8 @@ export default function DeveloperDashboard() {
 
     // Validar total de horas del día
     const totalDayHours = dayEntries.reduce((sum, e) => sum + e.hours, 0) + hours;
-    if (totalDayHours > 9) {
-      toast.error(`El total de horas del día excedería 9 horas (actual: ${totalDayHours})`);
+    if (totalDayHours > 12) {
+      toast.error(`El total de horas del día excedería 12 horas (actual: ${totalDayHours})`);
       return false;
     }
 
@@ -185,17 +185,17 @@ export default function DeveloperDashboard() {
     .reduce((sum, e) => sum + e.hours, 0);
 
   const totalHoursWeek = (() => {
-    const today = new Date(newEntry.date);
+    const today = new Date(newEntry.date + 'T00:00:00');
     const startOfWeek = new Date(today);
     startOfWeek.setDate(today.getDate() - today.getDay());
     const endOfWeek = new Date(startOfWeek);
     endOfWeek.setDate(startOfWeek.getDate() + 6);
 
+    const startStr = startOfWeek.toISOString().split('T')[0];
+    const endStr = endOfWeek.toISOString().split('T')[0];
+
     return timeEntries
-      .filter(e => {
-        const entryDate = new Date(e.date);
-        return entryDate >= startOfWeek && entryDate <= endOfWeek;
-      })
+      .filter(e => e.date >= startStr && e.date <= endStr)
       .reduce((sum, e) => sum + e.hours, 0);
   })();
 
@@ -458,14 +458,14 @@ export default function DeveloperDashboard() {
                         .map((entry) => (
                           <TableRow key={entry.id}>
                             <TableCell>
-                              {new Date(entry.date).toLocaleDateString()}
+                              {entry.date}
                             </TableCell>
                             <TableCell>
                               {entry.projectName || `Proyecto ${entry.projectId}`}
                             </TableCell>
-                            <TableCell>{entry.taskName}</TableCell>
+                            <TableCell>{entry.task_name}</TableCell>
                             <TableCell>
-                              {entry.startTime} - {entry.endTime}
+                              {entry.start_time} - {entry.end_time}
                             </TableCell>
                             <TableCell>{entry.hours}h</TableCell>
                             <TableCell>

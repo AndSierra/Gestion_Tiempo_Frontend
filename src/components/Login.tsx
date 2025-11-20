@@ -91,12 +91,12 @@ export default function Login() {
           <div className="mt-6 p-4 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground mb-2">Usuarios de prueba:</p>
             <div className="space-y-1 text-xs">
-              <p><strong>Admin:</strong> admin@timetracker.com</p>
-              <p><strong>Líder:</strong> paula@timetracker.com</p>
-              <p><strong>Desarrollador:</strong> harry@timetracker.com</p>
-              <p className="mt-2"><strong>Contraseña para admin:</strong> admin123</p>
-              <p><strong>Contraseña para líder:</strong> leader123</p>
-              <p><strong>Contraseña para desarrollador:</strong> dev123</p>
+              <p><strong>Admin: </strong>admin@timetracker.com</p>
+              <p><strong>Líder: </strong>jimena@timetracker.com</p>
+              <p><strong>Desarrollador: </strong>harry@timetracker.com</p>
+              <p className="mt-2"><strong>Contraseña para admin: </strong>admin123</p>
+              <p><strong>Contraseña para líder: </strong>leader123</p>
+              <p><strong>Contraseña para desarrollador: </strong>dev123</p>
             </div>
           </div>
         </CardContent>

@@ -105,7 +105,7 @@ export function useTemplates() {
   return { templates, loading, reload: loadTemplates };
 }
 
-export function useTimeEntries(userId?: number, projectId?: number) {
+export function useTimeEntries(userId?: number, projectId?: number, leaderId?: number) {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -117,12 +117,15 @@ export function useTimeEntries(userId?: number, projectId?: number) {
         response = await timeEntriesApi.getByUser(userId);
       } else if (projectId) {
         response = await timeEntriesApi.getByProject(projectId);
+      } else if (leaderId) {
+        response = await timeEntriesApi.getByLeader(leaderId);
       } else {
         response = await timeEntriesApi.getAll();
       }
       
       if (response.success && response.data) {
         setTimeEntries(response.data);
+
       }
     } catch (error) {
       console.error('Error loading time entries:', error);
@@ -133,7 +136,7 @@ export function useTimeEntries(userId?: number, projectId?: number) {
 
   useEffect(() => {
     loadTimeEntries();
-  }, [userId, projectId]);
+  }, [userId, projectId, leaderId]);
 
   return { timeEntries, loading, reload: loadTimeEntries };
 }

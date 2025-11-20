@@ -7,13 +7,13 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from './ui/table';
 import {
   Dialog,
@@ -70,7 +70,8 @@ export default function AdminDashboard() {
   const [isClientDialogOpen, setIsClientDialogOpen] = useState(false);
 
   // Project state
-  const [newProject, setNewProject] = useState({ name: '', clientId: '', leaderId: '', tasks: '', developerIds: [] as number[] });
+  const initialNewProject = { name: '', clientId: 0, leaderId: 0, tasks: '', developerIds: [] as number[], };
+  const [newProject, setNewProject] = useState(initialNewProject);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [isProjectDialogOpen, setIsProjectDialogOpen] = useState(false);
 
@@ -182,6 +183,15 @@ export default function AdminDashboard() {
   const handleUpdateProject = async () => {
     if (!editingProject) return;
 
+    console.log("Datos enviados al backend:", {
+      id: editingProject.id,
+      name: editingProject.name,
+      clientId: editingProject.clientId,
+      leaderId: editingProject.leaderId,
+      tasks: editingProject.tasks,
+      developerIds: editingProject.developerIds
+    });
+
     try {
       await projectsApi.update(editingProject.id, {
         name: editingProject.name,
@@ -214,10 +224,19 @@ export default function AdminDashboard() {
   const openEditProjectDialog = (project: Project) => {
     // Obtener los IDs de los desarrolladores del proyecto
     const developerIds = (project.developers || []).map(dev => dev.id);
-    setEditingProject({...project, developerIds});
+
+    // Normalizar los datos: convertir snake_case a camelCase
+    // Asegurarse de que clientId y leaderId sean números válidos
+    const normalizedProject: Project = {
+      ...project,
+      clientId: project.clientId ?? project.client_id ?? 0,
+      leaderId: project.leaderId ?? project.leader_id ?? 0,
+      developerIds
+    };
+
+    setEditingProject(normalizedProject);
     setIsProjectDialogOpen(true);
   };
-
   const closeProjectDialog = () => {
     setIsProjectDialogOpen(false);
     setEditingProject(null);
@@ -399,7 +418,7 @@ export default function AdminDashboard() {
             ))}
           </div>
 
-          <Tabs value={activeTab} onValueChange={(value: React.SetStateAction<string>) => {
+          <Tabs value={activeTab} onValueChange={(value) => {
             setActiveTab(value);
             navigate(`#${value}`);
           }}>
@@ -529,11 +548,16 @@ export default function AdminDashboard() {
                     </div>
                     <Dialog open={isProjectDialogOpen} onOpenChange={setIsProjectDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button>
+                        <Button onClick={() => {
+                          setEditingProject(null);
+                          setNewProject({ name: '', clientId: '', leaderId: '', tasks: '', developerIds: [] });
+                          setIsProjectDialogOpen(true);
+                        }}>
                           <Plus className="h-4 w-4 mr-2" />
                           Nuevo Proyecto
                         </Button>
                       </DialogTrigger>
+
                       <DialogContent>
                         <DialogHeader>
                           <DialogTitle>{editingProject ? 'Editar Proyecto' : 'Crear Nuevo Proyecto'}</DialogTitle>
@@ -557,10 +581,10 @@ export default function AdminDashboard() {
                           <div>
                             <Label htmlFor="projectClient">Cliente</Label>
                             <Select
-                              value={editingProject ? (editingProject.clientId?.toString() || '') : newProject.clientId}
+                              value={editingProject ? ((editingProject.clientId || editingProject.clientid)?.toString() || '') : newProject.clientId}
                               onValueChange={(value) => editingProject
                                 ? setEditingProject({ ...editingProject, clientId: parseInt(value) })
-                                : setNewProject({ ...newProject, clientId: value })
+                                : setNewProject({ ...newProject, clientId: parseInt(value) })
                               }
                             >
                               <SelectTrigger>
@@ -578,8 +602,8 @@ export default function AdminDashboard() {
                           <div>
                             <Label htmlFor="projectLeader">Líder del Proyecto</Label>
                             <Select
-                              value={editingProject ? (editingProject.clientId?.toString() || '') : newProject.leaderId}
-                              onValueChange={(value: string) => editingProject
+                              value={editingProject ? ((editingProject.leaderId || editingProject.leader_id)?.toString() || '') : newProject.leaderId}
+                              onValueChange={(value) => editingProject
                                 ? setEditingProject({ ...editingProject, leaderId: parseInt(value) })
                                 : setNewProject({ ...newProject, leaderId: value })
                               }
@@ -596,7 +620,7 @@ export default function AdminDashboard() {
                               </SelectContent>
                             </Select>
                           </div>
-                          
+
                           {/* Selector de Plantilla */}
                           {!editingProject && (
                             <div>
@@ -606,7 +630,7 @@ export default function AdminDashboard() {
                                 onValueChange={(value) => {
                                   const template = templates.find(t => t.id.toString() === value);
                                   if (template) {
-                                    setNewProject({...newProject, tasks: template.tasks});
+                                    setNewProject({ ...newProject, tasks: template.tasks });
                                     toast.success('Tareas cargadas desde la plantilla');
                                   }
                                 }}
@@ -624,7 +648,7 @@ export default function AdminDashboard() {
                               </Select>
                             </div>
                           )}
-                          
+
                           <div>
                             <Label htmlFor="projectTasks">Tareas (separadas por coma)</Label>
                             <Textarea
@@ -637,7 +661,7 @@ export default function AdminDashboard() {
                               placeholder="Frontend, Backend, Testing, Deployment"
                             />
                           </div>
-                          
+
                           {/* Selector de Desarrolladores */}
                           <div>
                             <Label>Desarrolladores Asignados</Label>
@@ -646,7 +670,7 @@ export default function AdminDashboard() {
                                 <label key={developer.id} className="flex items-center space-x-2 cursor-pointer">
                                   <input
                                     type="checkbox"
-                                    checked={editingProject 
+                                    checked={editingProject
                                       ? (editingProject.developerIds || []).includes(developer.id)
                                       : newProject.developerIds.includes(developer.id)
                                     }
@@ -656,12 +680,12 @@ export default function AdminDashboard() {
                                         const newIds = e.target.checked
                                           ? [...currentIds, developer.id]
                                           : currentIds.filter(id => id !== developer.id);
-                                        setEditingProject({...editingProject, developerIds: newIds});
+                                        setEditingProject({ ...editingProject, developerIds: newIds });
                                       } else {
                                         const newIds = e.target.checked
                                           ? [...newProject.developerIds, developer.id]
                                           : newProject.developerIds.filter(id => id !== developer.id);
-                                        setNewProject({...newProject, developerIds: newIds});
+                                        setNewProject({ ...newProject, developerIds: newIds });
                                       }
                                     }}
                                     className="rounded"
@@ -674,7 +698,7 @@ export default function AdminDashboard() {
                               )}
                             </div>
                           </div>
-                          
+
                           <div className="flex space-x-2">
                             <Button
                               onClick={editingProject ? handleUpdateProject : handleCreateProject}
